@@ -2,7 +2,8 @@ use_frameworks!
 
 target 'Optical_Example' do
   pod 'Optical', :path => '../'
-
+  pod 'PromiseKit'
+  
   target 'Optical_Tests' do
     inherit! :search_paths
 
