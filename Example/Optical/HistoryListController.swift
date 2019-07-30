@@ -45,8 +45,8 @@ class HistoryListController: UIViewController {
     super.viewDidLoad()
     self.view.backgroundColor = .white
     
-    opticle.watch()
-      .render({ [weak self] state in
+    opticle.watch
+      .live({ [weak self] state in
         self?.tableView.reloadData()
       })
     
@@ -122,7 +122,7 @@ extension HistoryListController: UITableViewDelegate {
     // NOTE: dataPassing
     viewController.opticle.state.history = targetOpticle.state.history
     
-    viewController.opticle.watch().render({ state in
+    viewController.opticle.watch.live({ state in
       
       switch state.status {
       case .edited:

@@ -29,25 +29,36 @@ class HistoryShowController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     
-    opticle.watch().render({ [weak self] state in
-      
-      switch state.status {
-      case .edited:
+    opticle.watch
+      .map({ $0.status })
+      .filter({ status -> Bool in
+        switch status {
+        case .edited:
+          return true
+        default:
+          return false
+        }
+      })
+      .live({ [weak self] _ in
         self?.dismiss(animated: true, completion: nil)
-        return
-      default:
-        break
-      }
-      
-      self?.titleEditTextView.text = state.title
-      
-      if let errorMessage = state.message {
-        self?.messageLabel.isHidden = false
-        self?.messageLabel.text = errorMessage
-      } else {
-        self?.messageLabel.isHidden = true
-      }
-    })
+      })
+    
+    opticle.watch
+      .map({ $0.title })
+      .live({ [weak self] in
+        self?.titleEditTextView.text = $0
+      })
+    
+    opticle.watch
+      .map({ $0.message })
+      .live({ [weak self] errorMessage in
+        if let errorMessage = errorMessage {
+          self?.messageLabel.isHidden = false
+          self?.messageLabel.text = errorMessage
+        } else {
+          self?.messageLabel.isHidden = true
+        }
+      })
   }
   
   override func viewWillAppear(_ animated: Bool) {

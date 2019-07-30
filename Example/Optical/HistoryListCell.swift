@@ -29,7 +29,8 @@ class HistoryListCell: UITableViewCell {
   weak var opticle: HistoryListCellOpticle? {
     didSet {
       render(opticle?.state)
-      opticle?.watch().render({ [weak self] in
+      
+      opticle?.watch.live({ [weak self] in
         self?.render($0)
       })
     }

@@ -21,8 +21,6 @@ public protocol Opticle: class, AssociatedObjectStorable {
   func mutate(_ state: State, response: Response) -> State
 }
 
-// MARK - services
-
 extension Opticle {
   
   public func recover(_ state: State, request: Request, error: Error?) -> State {
@@ -34,21 +32,10 @@ extension Opticle {
     
     return state
   }
-}
-
-// MARK: - watch
-
-extension Opticle {
   
-  public func watch(filter: @escaping (State) -> Bool) -> Watcher<State> {
-    let watcher = self.watch()
-    watcher._filter = filter
-    return watcher
-  }
-  
-  public func watch() -> Watcher<State> {
-    _lock.lock()
+  public var watch: Watcher<State> {
     let watcher = Watcher<State>.init()
+    _lock.lock()
     _watchers.append(watcher)
     _lock.unlock()
     return watcher
@@ -113,9 +100,7 @@ extension Opticle {
     
     _watchers.forEach({ watcher in
       _lock.lock()
-      if let sync = watcher._sync {
-        sync(newState)
-      }
+      watcher._state = newState
       _lock.unlock()
     })
   }

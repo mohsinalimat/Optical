@@ -12,40 +12,47 @@ public class Watcher<State> {
   
   private var _lock: NSRecursiveLock = .init()
   private var _handler: ((State) -> Void)?
+  private var _filter: ((State) -> Bool)?
   private var _queue: DispatchQueue = DispatchQueue.main
-  private var _isMounted: Bool = true
   
-  internal var _filter: ((State) -> Bool)?
-  internal var _sync: ((State) -> Void)?
-  
-  public func mount() {
-    _lock.lock(); defer { _lock.unlock() }
-    _isMounted = true
-  }
-  
-  public func unmount() {
-    _lock.lock(); defer { _lock.unlock() }
-    _isMounted = false
-  }
-  
-  public func render(on queue: DispatchQueue = DispatchQueue.main,
-                     _ handler: @escaping (State) -> Void) {
-    
-    _lock.lock(); defer { _lock.unlock() }
-    guard _isMounted == true else { return }
-    
-    self._queue = queue
-    self._handler = handler
-    
-    _sync = { [weak self] newState in
-      if let handler = self?._filter, handler(newState) == false {
+  internal var _state: State? {
+    didSet {
+      guard let _validState = self._state else { return }
+      
+      if let predicateFilter = _filter,
+        predicateFilter(_validState) == false {
         return
       }
       
-      guard let handler = self?._handler else { return }
-      self?._queue.async {
-        handler(newState)
+      self._queue.async { [weak self] in
+        self?._handler?(_validState)
       }
     }
+  }
+}
+
+extension Watcher {
+
+  public func live(on queue: DispatchQueue = DispatchQueue.main,
+            _ handler: @escaping (State) -> Void) {
+    _lock.lock(); defer { _lock.unlock() }
+    self._queue = queue
+    self._handler = handler
+  }
+  
+  public func map<R>(on queue: DispatchQueue = DispatchQueue.main,
+                     _ transform: @escaping (State) -> R) -> Watcher<R> {
+    let watcher = Watcher<R>.init()
+    self.live(on: queue, { state in
+      watcher._state = transform(state)
+    })
+    return watcher
+  }
+  
+  public func filter(on queue: DispatchQueue = DispatchQueue.main,
+                     _ predicate: @escaping (State) -> Bool) -> Watcher<State> {
+    _lock.lock(); defer { _lock.unlock() }
+    self._filter = predicate
+    return self
   }
 }
