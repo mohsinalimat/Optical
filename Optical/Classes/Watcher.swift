@@ -8,16 +8,24 @@
 import Dispatch
 import Foundation.NSLock
 
-public class Watcher<State> {
+public protocol WatchControlable: class {
+  
+  func subscribe()
+  func unsubscribe()
+}
+
+public class Watcher<State>: WatchControlable {
   
   private var _lock: NSRecursiveLock = .init()
   private var _handler: ((State) -> Void)?
   private var _filter: ((State) -> Bool)?
   private var _queue: DispatchQueue = DispatchQueue.main
+  private var _isLiveAvaliable: Bool = true
   
   internal var _state: State? {
     didSet {
-      guard let _validState = self._state else { return }
+      guard let _validState = self._state,
+        self._isLiveAvaliable == true else { return }
       
       if let predicateFilter = _filter,
         predicateFilter(_validState) == false {
@@ -29,15 +37,27 @@ public class Watcher<State> {
       }
     }
   }
+  
+  public func subscribe() {
+    _lock.lock(); defer { _lock.unlock() }
+    _isLiveAvaliable = true
+  }
+  
+  public func unsubscribe() {
+    _lock.lock(); defer { _lock.unlock() }
+    _isLiveAvaliable = false
+  }
 }
 
 extension Watcher {
 
+  @discardableResult
   public func live(on queue: DispatchQueue = DispatchQueue.main,
-            _ handler: @escaping (State) -> Void) {
+            _ handler: @escaping (State) -> Void) -> WatchControlable {
     _lock.lock(); defer { _lock.unlock() }
     self._queue = queue
     self._handler = handler
+    return self
   }
   
   public func map<R>(on queue: DispatchQueue = DispatchQueue.main,
