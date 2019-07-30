@@ -51,19 +51,23 @@ Optical is a lightweight and predictable state management pattern framework for 
 ```swift
 let opticle = SomeOpticle()
 
-opticle.watch().render { newState in 
+opticle.watch.live { newState in 
   print(newSate.value)
 }
 
 // you can observe state duplicately!
-opticle.watch().render({ newState in 
+opticle.watch.live({ newState in 
   print("listen one more \(newSate.value)")
 })
 
-
 // you can observe state on other dispatch qos!
-opticle.watch().render(on: DispatchQueue.global(.background), { newState in 
+opticle.watch.live(on: DispatchQueue.global(.background), { newState in 
   print("background \(newSate.value)")
+})
+
+// Map & Fillter 
+opticle.watch.map { $0.list }.filter { $0.count > 10 }.live({ list in 
+  print("map & filter")
 })
 ```
 
