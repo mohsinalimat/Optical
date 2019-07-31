@@ -87,11 +87,11 @@ opticle.watch.map { $0.list }.filter { $0.count > 10 }.live({ list in
     self.commit(.failed(error), from: request)
   }
   
-  func mutate(_ state: State, response: Response) {
+  func mutate(_ state: State, response: Response) -> State {
     // .success only
   }
   
-  func recover(_ state: State, request: Request, error: Error?) {
+  func recover(_ state: State, request: Request, error: Error?) -> State {
     // .failed from request
   }
 ```
